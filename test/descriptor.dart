@@ -41,8 +41,8 @@ final _ourPubpsec = loadYaml(File('pubspec.yaml').readAsStringSync(),
 /// * Adds a dependency on grinder and `cli_pkg`.
 ///
 /// * Imports `package:grinder/grinder.dart` and `package:cli_pkg/cli_pkg.dart`.
-DirectoryDescriptor package(Map<String, Object/*!*/> pubspec, String grindDotDart,
-    [List<Descriptor> files]) {
+DirectoryDescriptor package(Map<String, Object> pubspec, String grindDotDart,
+    [List<Descriptor>? files]) {
   pubspec = {
     "environment": _ourPubpsec["environment"],
     "executables": <String, Object>{},
@@ -51,7 +51,7 @@ DirectoryDescriptor package(Map<String, Object/*!*/> pubspec, String grindDotDar
       ..._ourDependency("grinder"),
       ..._ourDependency("test"),
       "cli_pkg": {"path": p.current},
-      ...?(pubspec["dev_dependencies"] as Map<String, Object>),
+      ...?(pubspec["dev_dependencies"] as Map<String, Object>?),
     },
     "dependency_overrides": {
       ...?_ourDependencyOverride("grinder"),
@@ -95,18 +95,14 @@ DirectoryDescriptor package(Map<String, Object/*!*/> pubspec, String grindDotDar
 
 /// Returns the dependency description for `package` from `cli_pkg`'s own
 /// pubspec, as a map so it can be included in a map literal with `...`.
-Map<String, Object/*!*/> _ourDependency(String package) =>
+Map<String, Object> _ourDependency(String package) =>
     {package: _ourPubpsec["dependencies"][package]};
 
 /// Returns the dependency override for `package` from `cli_pkg`'s own pubspec,
 /// as a map so it can be included in a map literal with `...?`.
-Map<String, Object/*!*/> _ourDependencyOverride(String package) {
-  var overrides = _ourPubpsec["dependency_overrides"];
-  if (overrides == null) return const {};
-
-  // TODO: use ?[]
-  var descriptor = (overrides as YamlMap)[package];
-  return descriptor == null ? const {} : {package: overrides[package]};
+Map<String, Object> _ourDependencyOverride(String package) {
+  var descriptor = (_ourPubpsec["dependency_overrides"] as YamlMap?)?[package];
+  return descriptor == null ? const {} : {package: descriptor};
 }
 
 /// Creates a new [ArchiveDescriptor] with [name] and [contents].

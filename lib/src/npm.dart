@@ -15,8 +15,8 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:collection/collection.dart' show IterableExtension;
 import 'package:grinder/grinder.dart';
-import 'package:meta/meta.dart';
 import 'package:node_preamble/preamble.dart' as preamble;
 import 'package:path/path.dart' as p;
 
@@ -89,7 +89,7 @@ final jsRequires = InternalConfigVariable.value(<String, String>{},
 ///
 /// This path is relative to the root of the package. It defaults to `null`,
 /// which means no user-defined code will run when the module is loaded.
-final jsModuleMainLibrary = InternalConfigVariable.value<String>(null);
+final jsModuleMainLibrary = InternalConfigVariable.value<String?>(null);
 
 /// The decoded contents of the npm package's `package.json` file.
 ///
@@ -102,7 +102,7 @@ final jsModuleMainLibrary = InternalConfigVariable.value<String>(null);
 final npmPackageJson = InternalConfigVariable.fn<Map<String, Object>>(
     () => File("package.json").existsSync()
         ? jsonDecode(File("package.json").readAsStringSync())
-            as Map<String, Object>/*!*/
+            as Map<String, Object>
         : fail("pkg.npmPackageJson must be set to build an npm package."),
     freeze: freezeJsonMap);
 
@@ -119,7 +119,7 @@ String get _npmName {
 ///
 /// By default, this loads the contents of the `README.md` file at the root of
 /// the repository.
-final npmReadme = InternalConfigVariable.fn<String>(() =>
+final npmReadme = InternalConfigVariable.fn<String?>(() =>
     File("README.md").existsSync()
         ? File("README.md").readAsStringSync()
         : null);
@@ -202,7 +202,7 @@ void addNpmTasks() {
 ///
 /// If [release] is `true`, this compiles with [jsReleaseFlags]. Otherwise it
 /// compiles with [jsDevFlags].
-void _js({@required bool release}) {
+void _js({required bool release}) {
   ensureBuild();
 
   var source = File("build/${_npmName}_npm.dart");
@@ -227,9 +227,9 @@ void _js({@required bool release}) {
       // complain. We replace those with direct references to the modules, which
       // we load explicitly after the preamble.
       .replaceAllMapped(RegExp(r'self\.require\(("[^"]+")\)'), (match) {
-    var package = jsonDecode(match[1]) as String/*!*/;
+    var package = jsonDecode(match[1]!) as String;
     var identifier = requires.entries
-        .firstWhere((entry) => entry.value == package, orElse: () => null)
+        .firstWhereOrNull((entry) => entry.value == package)
         ?.key;
 
     if (identifier == null) {
@@ -261,22 +261,16 @@ void _js({@required bool release}) {
   destination.writeAsStringSync(buffer.toString());
 }
 
-// TODO: late
 /// A map from executable names in [executables] to JS- and Dart-safe
 /// identifiers to use to identify those modules.
-Map<String, String> get _executableIdentifiers {
-  if (__executableIdentifiers != null) return __executableIdentifiers;
-
+late final Map<String, String> _executableIdentifiers = (){
   var i = 0;
-  __executableIdentifiers = {
+  return {
     // Add a trailing underscore to indicate that the name is intended to be
     // private without making it Dart-private.
     for (var name in executables.value.keys) name: "cli_pkg_main_${i++}_"
   };
-  return __executableIdentifiers;
-}
-
-Map<String, String> __executableIdentifiers;
+}();
 
 /// The text of a Dart library that wraps and JS-exports all the package's
 /// executables so they can be compiled as a unit.

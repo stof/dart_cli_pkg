@@ -20,7 +20,6 @@ import 'utils.dart';
 ///
 /// This must be set explicitly.
 final homebrewRepo = InternalConfigVariable.fn<String>(
-    // TODO: delete as
     () => fail("pkg.homebrewRepo must be set to deploy to Homebrew."));
 
 /// The path to the formula file within the Homebrew repository to update with
@@ -29,7 +28,7 @@ final homebrewRepo = InternalConfigVariable.fn<String>(
 /// If this isn't set, the task will default to looking for a single `.rb` file
 /// at the root of the repo without an `@` in its filename and modifying that.
 /// If there isn't exactly one such file, the task will fail.
-final homebrewFormula = InternalConfigVariable.value<String>(null);
+final homebrewFormula = InternalConfigVariable.value<String?>(null);
 
 /// Whether to update [homebrewFormula] in-place or copy it to a new
 /// `@`-versioned formula file for the current version number.
@@ -197,5 +196,5 @@ Future<String> _originHead(String repo) async {
 String _classify(Version version) => version
     .toString()
     .replaceAllMapped(
-        RegExp(r'[-_.]([a-zA-Z0-9])'), (match) => match[1].toUpperCase())
+        RegExp(r'[-_.]([a-zA-Z0-9])'), (match) => match[1]!.toUpperCase())
     .replaceAll('+', 'x');
